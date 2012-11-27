@@ -4,6 +4,10 @@ MongoQueue is Job queue written in Go, which uses Mongo as a backend storage eng
 
 It supports job prioritisation, locking, retries for failed jobs, retry timers, age limits and failure limits.
 
+MongoQueue is under the BSD license, found in the LICENSE file.
+
+Copyright © 2012 Andreas Louca <andreas@louca.org>
+
 ## Example usage
 
 To create a new MongoQueue:
