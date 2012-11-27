@@ -68,6 +68,17 @@ func NewMongoQueue(database, queue, server string, settings *MongoQueueSettings)
 
 	mq.Settings = settings
 
+	go func() {
+		ticker := time.NewTicker(time.Duration(settings.Cleanup) * time.Second)
+
+		for {
+			select {
+			case <-ticker.C:
+				mq.Cleanup()
+			}
+		}
+	}()
+
 	return mq
 }
 

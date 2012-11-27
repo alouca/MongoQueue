@@ -14,7 +14,7 @@ import (
 var mq *MongoQueue
 
 func init() {
-	mq = NewMongoQueue("mq", "testing", "127.0.0.1", &MongoQueueSettings{LockLimit: 5, RetryLimit: 2, MinBackoff: 1, MaxBackoff: 3, MaxDoublings: 2, AgeLimit: 25})
+	mq = NewMongoQueue("mq", "testing", "127.0.0.1", &MongoQueueSettings{Cleanup: 30, LockLimit: 5, RetryLimit: 2, MinBackoff: 1, MaxBackoff: 3, MaxDoublings: 2, AgeLimit: 25})
 }
 
 type Testdata struct {
