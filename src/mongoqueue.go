@@ -21,6 +21,7 @@ type MongoQueue struct {
 }
 
 type MongoQueueSettings struct {
+	Cleanup   int // The interval for the cleanup process
 	LockLimit int // The maximum number of seconds a job can remain locked to a pid
 	// Retry parameters
 	RetryLimit   int // The maximum number of retry attempts for a failed task
