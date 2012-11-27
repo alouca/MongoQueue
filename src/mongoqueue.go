@@ -1,3 +1,13 @@
+// Copyright 2012 Andreas Louca <andreas@louca.org>. All rights reserved.
+// Use of this source code is governed by the 2-clause BSD license
+// license that can be found in the LICENSE file.
+
+/*
+Package mongoqueue provides a job queue, which uses Mongo as a backend storage engine. 
+It supports a sophisticated feature set,  facilitating fine-grained job queueing.
+
+See: https://github.com/alouca/MongoQueue
+*/
 package mongoqueue
 
 import (
@@ -78,6 +88,8 @@ func (q *MongoQueue) Truncate() error {
 	return err
 }
 
+// Adds a new job in the queue. Higher priority number means higher priority
+// In order to make the queue to act as FIFO instead of a priority queue, specify for all jobs priority 0
 func (q *MongoQueue) Add(x interface{}, p int) (string, error) {
 	id := bson.NewObjectId()
 	now := time.Now().Unix()

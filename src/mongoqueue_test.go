@@ -1,3 +1,7 @@
+// Copyright 2012 Andreas Louca <andreas@louca.org>. All rights reserved.
+// Use of this source code is governed by the 2-clause BSD license
+// license that can be found in the LICENSE file.
+
 package mongoqueue
 
 import (
