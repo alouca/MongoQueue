@@ -122,7 +122,7 @@ func (q *MongoQueue) Add(x interface{}, p int) (string, error) {
 }
 
 // Pop removes the top-most job from the Priority queue, and returns it back.
-func (q *MongoQueue) Pop() (interface{}, error) {
+func (q *MongoQueue) Pop() (string, interface{}, error) {
 	now := time.Now().Unix()
 
 	change := mgo.Change{
@@ -137,14 +137,16 @@ func (q *MongoQueue) Pop() (interface{}, error) {
 
 	if err != nil {
 		l.Error("Error retrieving data for Pop(): %s\n", err)
-		return nil, err
+		return "", nil, err
 	}
 	if res != nil {
+		id := res["_id"].(bson.ObjectId)
+
 		q.C.Remove(res)
-		return res["data"], nil
+		return id.Hex(), res["data"], nil
 	}
 
-	return nil, nil
+	return "", nil, nil
 }
 
 // Lock gets the top-most job from the Priority Queue, and locks it to a worker. The job is not deleted from the

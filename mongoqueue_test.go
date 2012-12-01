@@ -53,7 +53,7 @@ func TestRetrieve(t *testing.T) {
 	tl.Printf("Stats: %+v\n", stats)
 	// We are expecing 50 documents to be retrieved in correct order
 	for i := 0; i < 50; i++ {
-		d, err := mq.Pop()
+		_, d, err := mq.Pop()
 		if err != nil {
 			t.Fatal("Error getting data: %s", err.Error())
 		}
