@@ -12,7 +12,7 @@ Copyright © 2012 Andreas Louca <andreas@louca.org>
 
 To create a new MongoQueue:
 
-`mq := NewMongoQueue("mq", "testing", "127.0.0.1", &&MongoQueueSettings{Cleanup: 30, LockLimit: 5, RetryLimit: 2, MinBackoff: 1, MaxBackoff: 3, MaxDoublings: 2, AgeLimit: 25})`
+`mq := NewMongoQueue("mq", "testing", "127.0.0.1", &MongoQueueSettings{Cleanup: 30, LockLimit: 5, RetryLimit: 2, MinBackoff: 1, MaxBackoff: 3, MaxDoublings: 2, AgeLimit: 25})`
 
 mq is the database, testing is the collection and 127.0.0.1 is the mongo server. The MongoQueueSettings is a struct, which contains all the necessary queue behaviour parameters. All of the time parameters are specified in seconds.
 
