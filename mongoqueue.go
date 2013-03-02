@@ -249,8 +249,8 @@ func (q *MongoQueue) Cleanup() error {
 			"failed":     false,
 			"added":      bson.M{"$lte": deadline}},
 		bson.M{
-			"$set": bson.M{"failed": true}}
-			)
+			"$set": bson.M{"failed": true}},
+	)
 	if err != nil {
 		l.Error("Error executing expire jobs query: %s\n", err.Error())
 	} else {
