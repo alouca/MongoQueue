@@ -28,13 +28,13 @@ Parameter description:
 
 ### Adding a Job
 
-MQ is data-agnostic, so when adding a job an `interface{}` is passed to it. With the job, a priority is also passed, which indicates the priority level of the job being added to the queue. The higher the number, the highest the priority. 
+MQ is data-agnostic, so when adding a job an `interface{}` is passed to it. With the job, a priority is also passed, which indicates the priority level of the job being added to the queue. The higher the number, the highest the priority. MQ also allows the programmer to specify its own ID to a job, by passing the ID parameter. If left empty, a UUID will be automatically generated for the queued job.
 
 If you do not wish to use the priority in jobs, specify 0, and MQ will act as FIFO queue.
 
 Adding a job is really simple:
 
-`id, err := mq.Add(map[string][int]{"testing": 1}, 10)`
+`id, err := mq.Add(map[string][int]{"testing": 1}, "testing-id-1" 10)`
 
 The `Add` calls returns the Job ID, which is used to identify the job in later calls.
 
@@ -101,3 +101,6 @@ To cleanup and remove all the jobs from MQ use the call:
 
 The cleanup runs at intervals, specified in settings, which releases the locks for jobs that are locked for a period over the specified and marks jobs as permanently failed if necessary. 
 
+### Changelog
+
+* 2013-3-2: Added support for specifying custom Job ID, instead of relaying on Mongo ObjectID field _id. Allows for more flexibility when integrating with existing systems.

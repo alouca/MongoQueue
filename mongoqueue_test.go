@@ -27,7 +27,7 @@ func TestInsert(t *testing.T) {
 
 	for i := 0; i < 50; i++ {
 		d, _ := json.Marshal(Testdata{i, "lalala"})
-		id, err := mq.Add(string(d), i)
+		id, err := mq.Add(string(d), "", i)
 		if err != nil {
 			t.Fatal(err)
 		} else {
@@ -78,7 +78,7 @@ func TestExpire(t *testing.T) {
 	pid := "testing-Pid"
 	var id string
 
-	aid, err := mq.Add(string(d), 10)
+	aid, err := mq.Add(string(d), "", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +137,7 @@ func TestFailed(t *testing.T) {
 	pid := "testing-failed-Pid"
 	var id string
 
-	id, err := mq.Add(string(d), 10)
+	id, err := mq.Add(string(d), "", 10)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,7 @@ See: https://github.com/alouca/MongoQueue
 package mongoqueue
 
 import (
+	"code.google.com/p/go-uuid/uuid"
 	"github.com/alouca/goconfig"
 	"github.com/alouca/gologger"
 	"labix.org/v2/mgo"
@@ -101,11 +102,13 @@ func (q *MongoQueue) Truncate() error {
 
 // Adds a new job in the queue. Higher priority number means higher priority
 // In order to make the queue to act as FIFO instead of a priority queue, specify for all jobs priority 0
-func (q *MongoQueue) Add(x interface{}, p int) (string, error) {
-	id := bson.NewObjectId()
+func (q *MongoQueue) Add(x interface{}, id string, p int) (string, error) {
+	if id == "" {
+		id = uuid.NewRandom().String()
+	}
 	now := time.Now().Unix()
 	err := q.C.Insert(bson.M{
-		"_id":        id,
+		"id":         id,
 		"inprogress": false,
 		"failed":     false,
 		"priority":   p,
@@ -118,7 +121,7 @@ func (q *MongoQueue) Add(x interface{}, p int) (string, error) {
 		l.Fatal("Error inserting new task: %s\n", err.Error())
 	}
 
-	return id.Hex(), err
+	return id, err
 }
 
 // Pop removes the top-most job from the Priority queue, and returns it back.
@@ -140,10 +143,10 @@ func (q *MongoQueue) Pop() (string, interface{}, error) {
 		return "", nil, err
 	}
 	if res != nil {
-		id := res["_id"].(bson.ObjectId)
+		id := res["id"].(string)
 
 		q.C.Remove(res)
-		return id.Hex(), res["data"], nil
+		return id, res["data"], nil
 	}
 
 	return "", nil, nil
@@ -177,14 +180,13 @@ func (q *MongoQueue) Lock(pid string) (string, interface{}, error) {
 		l.Error("Error retrieving data for Lock(): %s\n", err)
 		return "", nil, err
 	}
-	id := res["_id"].(bson.ObjectId)
-	return id.Hex(), res["data"], nil
+	id := res["id"].(string)
+	return id, res["data"], nil
 }
 
 // Complete call removes the job from the priority queue
 func (q *MongoQueue) Complete(id string) error {
-	oid := bson.ObjectIdHex(id)
-	err := q.C.Remove(bson.M{"inprogress": true, "_id": oid})
+	err := q.C.Remove(bson.M{"inprogress": true, "id": id})
 
 	if err != nil {
 		l.Error("Unable to find job to mark as complete for Job ID %s\n", id)
@@ -214,8 +216,8 @@ func (q *MongoQueue) Fail(id string) error {
 		ReturnNew: true,
 	}
 	var res bson.M
-	jid := bson.ObjectIdHex(id)
-	info, err := q.C.Find(bson.M{"inprogress": true, "_id": jid}).Limit(1).Apply(change, &res)
+
+	info, err := q.C.Find(bson.M{"inprogress": true, "id": id}).Limit(1).Apply(change, &res)
 
 	if info != nil && info.Updated == 1 {
 		l.Printf("Marked job as failed for ID %s\n", id)
@@ -241,7 +243,14 @@ func (q *MongoQueue) Cleanup() error {
 	deadline = now - int64(q.Settings.AgeLimit)
 
 	// Failed jobs
-	info, err = q.C.UpdateAll(bson.M{"inprogress": false, "failed": false, "added": bson.M{"$lte": deadline}}, bson.M{"$set": bson.M{"failed": true}})
+	info, err = q.C.UpdateAll(
+		bson.M{
+			"inprogress": false,
+			"failed":     false,
+			"added":      bson.M{"$lte": deadline}},
+		bson.M{
+			"$set": bson.M{"failed": true}}
+			)
 	if err != nil {
 		l.Error("Error executing expire jobs query: %s\n", err.Error())
 	} else {
