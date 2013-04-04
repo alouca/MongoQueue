@@ -12,9 +12,11 @@ import (
 )
 
 var mq *MongoQueue
+var msj *MongoScheduleJobs
 
 func init() {
 	mq = NewMongoQueue("mq", "testing", "127.0.0.1", &MongoQueueSettings{Cleanup: 30, LockLimit: 5, RetryLimit: 2, MinBackoff: 1, MaxBackoff: 3, MaxDoublings: 2, AgeLimit: 25})
+	msj, _ = NewMongoScheduleJobs("mq", "127.0.0.1")
 }
 
 type Testdata struct {
@@ -175,6 +177,26 @@ func TestFailed(t *testing.T) {
 		t.Fatal("Lock aquired on job, when it should not!\n")
 	} else {
 		t.Logf("Correct behavior: Failed to acquire lock: %s\n", err.Error())
+	}
+}
+
+func TestSchedule(t *testing.T) {
+	t.Logf("Starting test for scheduling\n")
+
+	msj.ScheduleJob("testing", map[string]string{"testing": "testing"}, 1, 30)
+
+	ticker := time.NewTicker(time.Second * 10)
+
+	for {
+		select {
+		case <-ticker.C:
+			_, d, err := mq.Pop()
+			if err != nil {
+				t.Fatal("Error getting data: %s", err.Error())
+			} else {
+				t.Logf("Got data %+v\n", d)
+			}
+		}
 	}
 }
 

@@ -1,4 +1,4 @@
-// Copyright 2012 Andreas Louca <andreas@louca.org>. All rights reserved.
+// Copyright 2012-2013 Andreas Louca <andreas@louca.org>. All rights reserved.
 // Use of this source code is governed by the 2-clause BSD license
 // license that can be found in the LICENSE file.
 
@@ -26,9 +26,9 @@ var (
 )
 
 type MongoQueue struct {
-	MongoSession *mgo.Session
 	C            *mgo.Collection
 	Settings     *MongoQueueSettings
+	MongoSession *mgo.Session
 }
 
 type MongoQueueSettings struct {
@@ -48,13 +48,16 @@ type MongoQueueStats struct {
 	Failed     int
 }
 
-func NewMongoQueue(database, queue, server string, settings *MongoQueueSettings) *MongoQueue {
-	mq := new(MongoQueue)
+func init() {
 	l = logger.GetDefaultLogger()
 
 	if l == nil {
 		l = logger.CreateLogger(false, false)
 	}
+}
+
+func NewMongoQueue(database, queue, server string, settings *MongoQueueSettings) *MongoQueue {
+	mq := new(MongoQueue)
 
 	var err error
 
@@ -136,7 +139,7 @@ func (q *MongoQueue) Pop() (string, interface{}, error) {
 	var res bson.M
 	_, err := q.C.Find(bson.M{"inprogress": false, "runat": bson.M{"$lte": now}}).Sort("-priority").Limit(1).Apply(change, &res)
 
-	l.Printf("Debug: %v\n", res)
+	l.Debug("Debug: %v\n", res)
 
 	if err != nil {
 		l.Error("Error retrieving data for Pop(): %s\n", err)
