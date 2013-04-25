@@ -95,7 +95,12 @@ func (q *MongoQueue) Count() (c int, err error) {
 
 // Returns the total number of free jobs in the queue
 func (q *MongoQueue) CountFree() (c int, err error) {
-	c, err = q.C.Find(bson.M{"inprogress": false, "failed": false}).Count()
+	now := time.Now().Unix()
+	c, err = q.C.Find(bson.M{
+		"inprogress": false,
+		"failed":     false,
+		"runat":      bson.M{"$lte": now},
+		"retries":    bson.M{"$lte": q.Settings.RetryLimit}}).Count()
 
 	return
 }
