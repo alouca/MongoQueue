@@ -208,33 +208,19 @@ func (q *MongoQueue) Lock(pid string) (string, interface{}, error) {
 func (q *MongoQueue) MassLock(pid string, n int) ([]string, []interface{}, error) {
 	now := time.Now().Unix()
 
-	change := mgo.Change{
-		Update:    bson.M{"$set": bson.M{"inprogress": true, "started": time.Now().Unix(), "process-id": pid}},
-		ReturnNew: true,
-	}
+	change := bson.M{"$set": bson.M{"inprogress": true, "started": time.Now().Unix(), "process-id": pid}}
 	/*
 		> db["/f2e61aad-0f28-43a2-baa3-ed7a80b66c9c/snmppoller/requests"].ensureIndex({"retries":1})
 		> db["/f2e61aad-0f28-43a2-baa3-ed7a80b66c9c/snmppoller/requests"].ensureIndex({"runat": 1, "inprogress": 1, "failed": 1, "retries": 1})
 
 	*/
 	res := make([]bson.M, n)
-	info, err := q.C.Find(bson.M{
+	err := q.C.Find(bson.M{
 		"inprogress": false,
 		"failed":     false,
 		"runat":      bson.M{"$lte": now},
 		"retries":    bson.M{"$lte": q.Settings.RetryLimit},
-	}).Sort("-priority").Limit(n).Apply(change, &res)
-
-	l.Printf("Debug: %v\n", res)
-
-	if info != nil {
-		if info.Updated == 0 {
-			return nil, nil, nil
-		}
-	} else if err != nil {
-		l.Error("Error retrieving data for Lock(): %s\n", err)
-		return nil, nil, err
-	}
+	}).Sort("-priority").Limit(n).All(&res)
 
 	ids := make([]string, n)
 	data := make([]interface{}, n)
@@ -242,6 +228,7 @@ func (q *MongoQueue) MassLock(pid string, n int) ([]string, []interface{}, error
 		if r != nil {
 			ids[i] = r["id"].(string)
 			data[i] = r["data"]
+			q.C.Update(bson.M{"_id": r["id"]}, change)
 		}
 	}
 
