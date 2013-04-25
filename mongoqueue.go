@@ -176,7 +176,11 @@ func (q *MongoQueue) Lock(pid string) (string, interface{}, error) {
 		Update:    bson.M{"$set": bson.M{"inprogress": true, "started": time.Now().Unix(), "process-id": pid}},
 		ReturnNew: true,
 	}
+	/*
+		> db["/f2e61aad-0f28-43a2-baa3-ed7a80b66c9c/snmppoller/requests"].ensureIndex({"retries":1})
+		> db["/f2e61aad-0f28-43a2-baa3-ed7a80b66c9c/snmppoller/requests"].ensureIndex({"runat": 1, "inprogress": 1, "failed": 1, "retries": 1})
 
+	*/
 	var res bson.M
 	info, err := q.C.Find(bson.M{
 		"inprogress": false,
@@ -197,6 +201,51 @@ func (q *MongoQueue) Lock(pid string) (string, interface{}, error) {
 	}
 	id := res["id"].(string)
 	return id, res["data"], nil
+}
+
+// MassLock gets the top-most job from the Priority Queue, and locks it to a worker. The job is not deleted from the
+// queue unless it is marked as completed. It locks and returns N results
+func (q *MongoQueue) MassLock(pid string, n int) ([]string, []interface{}, error) {
+	now := time.Now().Unix()
+
+	change := mgo.Change{
+		Update:    bson.M{"$set": bson.M{"inprogress": true, "started": time.Now().Unix(), "process-id": pid}},
+		ReturnNew: true,
+	}
+	/*
+		> db["/f2e61aad-0f28-43a2-baa3-ed7a80b66c9c/snmppoller/requests"].ensureIndex({"retries":1})
+		> db["/f2e61aad-0f28-43a2-baa3-ed7a80b66c9c/snmppoller/requests"].ensureIndex({"runat": 1, "inprogress": 1, "failed": 1, "retries": 1})
+
+	*/
+	res := make([]bson.M, n)
+	info, err := q.C.Find(bson.M{
+		"inprogress": false,
+		"failed":     false,
+		"runat":      bson.M{"$lte": now},
+		"retries":    bson.M{"$lte": q.Settings.RetryLimit},
+	}).Sort("-priority").Limit(n).Apply(change, &res)
+
+	l.Printf("Debug: %v\n", res)
+
+	if info != nil {
+		if info.Updated == 0 {
+			return nil, nil, nil
+		}
+	} else if err != nil {
+		l.Error("Error retrieving data for Lock(): %s\n", err)
+		return nil, nil, err
+	}
+
+	ids := make([]string, n)
+	data := make([]interface{}, n)
+	for i, r := range res {
+		if r != nil {
+			ids[i] = r["id"].(string)
+			data[i] = r["data"]
+		}
+	}
+
+	return ids, data, nil
 }
 
 // Complete call removes the job from the priority queue
