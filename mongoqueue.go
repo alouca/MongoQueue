@@ -232,7 +232,7 @@ func (q *MongoQueue) MassLock(pid string, n int) ([]string, []interface{}, error
 		if r != nil {
 			ids[i] = r["id"].(string)
 			data[i] = r["data"]
-			q.C.Update(bson.M{"_id": r["id"]}, change)
+			q.C.Update(bson.M{"_id": r["_id"]}, change)
 		}
 	}
 
