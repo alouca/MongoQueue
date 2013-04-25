@@ -222,6 +222,10 @@ func (q *MongoQueue) MassLock(pid string, n int) ([]string, []interface{}, error
 		"retries":    bson.M{"$lte": q.Settings.RetryLimit},
 	}).Sort("-priority").Limit(n).All(&res)
 
+	if err != nil {
+		return nil, nil, err
+	}
+
 	ids := make([]string, n)
 	data := make([]interface{}, n)
 	for i, r := range res {
